@@ -79,7 +79,6 @@ def distance_matrix(stream_list, cores=1):
     # Initialize square matrix
     dist_mat = np.array([np.array([0.0] * len(stream_list))] *
                         len(stream_list))
-
     for i, master in enumerate(stream_list):
         # Start a parallel processing pool
         pool = Pool(processes=cores)
@@ -216,7 +215,7 @@ def group_delays(stream_list):
     stream_list = [(st, len(st)) for st in stream_list]
     stream_list.sort(key=lambda tup: tup[1])
     stream_list = [st[0] for st in stream_list]
-    for st, i in enumerate(stream_list):
+    for i, st in enumerate(stream_list):
         msg = ' '.join(['Working on waveform', str(i), 'of',
                         str(len(stream_list))])
         print msg
@@ -308,10 +307,10 @@ def SVD(stream_list):
                     for i in range(len(stream_list)) if
                     len(stream_list[i].select(station=stachan.split('.')[0],
                                               channel=stachan.split('.')[1]))
-                                          != 0]
+                    != 0]
         chan_mat = np.asarray(chan_mat)
         print chan_mat.shape
-        U, s, V = np.linalg.svd(chan_mat, full_matrices=False)
+        U, s, V = np.linalg.svd(chan_mat, full_matrices=True)
         SValues.append(s)
         SVectors.append(V)
         Uvectors.append(U)
@@ -478,7 +477,7 @@ def extract_detections(detections, templates, contbase_list, extract_len=90.0,
     if extract_Z:
         new_all_stachans = []
         new_all_delays = []
-        for template, t in enumerate(all_stachans):
+        for t, template in enumerate(all_stachans):
             stachans = template[1]
             delays = all_delays[t][1]
             new_stachans = []
@@ -501,19 +500,22 @@ def extract_detections(detections, templates, contbase_list, extract_len=90.0,
         all_delays = new_all_delays
         all_stachans = new_all_stachans
     if not len(additional_stations) == 0:
-        for template, t in enumerate(all_stachans):
+        print('Adding additional stations')
+        for t, template in enumerate(all_stachans):
             av_delay = np.mean(all_delays[t][1])
             for sta in additional_stations:
                 if sta not in template[1]:
+                    print('Added station ' + '.'.join(sta))
                     template[1].append(sta)
                     all_delays[t][1].append(av_delay)
 
     # Loop through the days
     for detection_day in detection_days:
-        print 'Working on detections for day: ' + str(detection_day)
+        print('Working on detections for day: ' + str(detection_day))
         stachans = list(set([stachans[1] for stachans in all_stachans][0]))
         # List of all unique stachans - read in all data
         for stachan in stachans:
+            print('Extracting data for ' + '.'.join(stachan))
             contbase = [base for base in contbase_list
                         if base[2] == stachan[2]][0]
             if contbase[1] == 'yyyymmdd':
