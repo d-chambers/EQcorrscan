@@ -113,7 +113,7 @@ def _median_window(window, window_start, multiplier, starttime, sampling_rate,
     :returns: peaks
     :rtype: list
     """
-    from eqcorrscan.utils.findpeaks import find_peaks2_short
+    from eqcorrscan.utils.findpeaks import find_peaks
     from eqcorrscan.utils.plotting import peaks_plot
 
     MAD = np.median(np.abs(window))
@@ -122,8 +122,8 @@ def _median_window(window, window_start, multiplier, starttime, sampling_rate,
         print('Threshold for window is: ' + str(thresh) +
               '\nMedian is: ' + str(MAD) +
               '\nMax is: ' + str(np.max(window)))
-    peaks = find_peaks2_short(arr=window,
-                              thresh=thresh, trig_int=5, debug=0)
+    peaks = find_peaks(arr=window,
+                       thresh=thresh, trig_int=5, debug=0)
     if debug >= 4 and peaks:
         peaks_plot(window, starttime, sampling_rate,
                    save=False, peaks=peaks)
@@ -181,7 +181,7 @@ def template_remove(tr, template, cc_thresh, windowlength,
     :rtype: :class:`obspy.core.trace.Trace`
     """
     from eqcorrscan.core.match_filter import normxcorr2
-    from eqcorrscan.utils.findpeaks import find_peaks2_short
+    from eqcorrscan.utils.findpeaks import find_peaks
     from obspy import Trace
     from eqcorrscan.utils.timer import Timer
     import matplotlib.pyplot as plt
@@ -202,9 +202,9 @@ def template_remove(tr, template, cc_thresh, windowlength,
             plt.plot(cc.flatten(), 'k', label='cross-correlation')
             plt.legend()
             plt.show()
-        peaks = find_peaks2_short(arr=cc.flatten(), thresh=cc_thresh,
-                                  trig_int=windowlength * tr.stats.
-                                  sampling_rate)
+        peaks = find_peaks(arr=cc.flatten(), thresh=cc_thresh,
+                           trig_int=windowlength * tr.stats.
+                           sampling_rate)
         for peak in peaks:
             tr.data = _interp_gap(data=tr.data,
                                   peak_loc=peak[1] + int(0.5 * _interp_len),

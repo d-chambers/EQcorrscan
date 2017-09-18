@@ -526,7 +526,7 @@ def _detect(detector, st, threshold, trig_int, moveout=0, min_trig=0,
     debug_print('Finding peaks', 0, debug)
     peaks = []
     for i in range(len(stream[0])):
-        peaks.append(findpeaks.find_peaks2_short(
+        peaks.append(findpeaks.find_peaks(
             arr=stats[i], thresh=threshold, trig_int=trig_int_samples,
             debug=debug))
     if not detector.multiplex:

@@ -264,7 +264,7 @@ def peaks_plot(data, starttime, samp_rate, save=False, peaks=[(0, 0)],
     >>> data[30]=100
     >>> data[60]=40
     >>> threshold = 10
-    >>> peaks = findpeaks.find_peaks2_short(data, threshold, 3)
+    >>> peaks = findpeaks.find_peaks(data, threshold, 3)
     >>> peaks_plot(data=data, starttime=UTCDateTime("2008001"),
     ...            samp_rate=10, peaks=peaks)  # doctest: +SKIP
 
