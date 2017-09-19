@@ -43,7 +43,7 @@ from eqcorrscan.core.lag_calc import lag_calc
 from eqcorrscan.utils.catalog_utils import _get_origin
 from eqcorrscan.utils.correlate import get_array_xcorr, get_stream_xcorr
 from eqcorrscan.utils.debug_log import debug_print
-from eqcorrscan.utils.findpeaks import find_peaks2_short, decluster
+from eqcorrscan.utils.findpeaks import find_peaks, decluster
 from eqcorrscan.utils.plotting import cumulative_detections
 from eqcorrscan.utils.pre_processing import dayproc, shortproc
 
@@ -4013,7 +4013,7 @@ def match_filter(template_names, template_list, st, threshold,
             4, debug)
         tic = time.clock()
         if max(cccsum) > rawthresh:
-            peaks = find_peaks2_short(
+            peaks = find_peaks(
                 arr=cccsum, thresh=rawthresh,
                 trig_int=trig_int * stream[0].stats.sampling_rate,
                 debug=debug,

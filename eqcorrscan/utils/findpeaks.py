@@ -13,8 +13,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import random
-import numpy as np
 
+import numpy as np
 from obspy import UTCDateTime
 from scipy import ndimage
 
@@ -54,8 +54,8 @@ def is_prime(number):
         return False
 
 
-def find_peaks2_short(arr, thresh, trig_int, debug=0, starttime=False,
-                      samp_rate=1.0):
+def find_peaks(arr, thresh, trig_int, debug=0, starttime=False,
+               samp_rate=1.0):
     """
     Determine peaks in an array of data above a certain threshold.
 
@@ -67,7 +67,7 @@ def find_peaks2_short(arr, thresh, trig_int, debug=0, starttime=False,
     :param thresh: The threshold below which will be considered noise and \
         peaks will not be found in.
     :type trig_int: int
-    :param trig_int: The minimum difference in samples between triggers,\
+    :param trig_int: The minimum difference in samples between triggers,
         if multiple peaks within this window this code will find the highest.
     :type debug: int
     :param debug: Optional, debug level 0-5
@@ -85,7 +85,86 @@ def find_peaks2_short(arr, thresh, trig_int, debug=0, starttime=False,
     >>> threshold = 10
     >>> arr[40] = 20
     >>> arr[60] = 100
-    >>> find_peaks2_short(arr, threshold, 3)
+    >>> find_peaks(arr, threshold, 3)
+    [(20.0, 40), (100.0, 60)]
+    """
+    # Set everything below the threshold to zero
+    image = np.abs(np.copy(arr))
+    image[image < thresh] = 0
+    # Find non-zero contiguous blocks and reduce each block to max abs value
+    labeled_image, number_of_objects = ndimage.label(image)
+    peak_slices = ndimage.find_objects(labeled_image)
+    # collect into peaks and indicies where peaks occur
+    peaks = np.fromiter((np.max(arr[sli]) for sli in peak_slices),
+                        dtype=arr.dtype)
+    inds = np.fromiter((np.argmax(arr[sli]) + sli[0].start
+                        for sli in peak_slices), dtype=np.int)
+    if len(peaks):  # decluster
+        return decluster2(peaks, inds, trig_int)
+    else:
+        return []
+
+
+def decluster2(peaks, index, trig_int):
+    """
+    Decluster peaks based on an enforced minimum separation.
+
+    :type peaks: np.array
+    :param peaks: list of tuples of (value, sample)
+    :type trig_int: int
+    :param trig_int: Minimum trigger interval in samples
+    :type return_ind: bool
+    :param return_ind:
+        Whether to also return the indices of the original peaks or not.
+
+    :return: list of tuples of (value, sample)
+    """
+    # sort peaks highest to lowest
+    peak_ind_list = []  # a list of indicies that should be kept
+    # get a sorted list of indicies of the reduced arrays
+    new_inds = np.argsort(-np.abs(peaks))
+    # get a sorted list of the original indicies
+    sorted_peak_inds = index[new_inds]
+    # iterate, if no peak with a high value occurs within trig int save
+    for pnum, ind in enumerate(sorted_peak_inds):
+        if not np.any(abs(ind - sorted_peak_inds[: pnum]) < trig_int):
+            peak_ind_list.append(new_inds[pnum])
+    # form a list of tuples with [(peak_value, peak_index), ...]
+    return [(peaks[x], index[x]) for x in np.sort(peak_ind_list)]
+
+
+def find_peaks2_short(arr, thresh, trig_int, debug=0, starttime=False,
+                      samp_rate=1.0):
+    """
+    Determine peaks in an array of data above a certain threshold.
+
+    Uses a mask to remove data below threshold and finds peaks in what is left.
+
+    :type arr: numpy.ndarray
+    :param arr: 1-D numpy array is required
+    :type thresh: float
+    :param thresh: The threshold below which will be considered noise and \
+        peaks will not be found in.
+    :type trig_int: int
+    :param trig_int: The minimum difference in samples between triggers,
+        if multiple peaks within this window this code will find the highest.
+    :type debug: int
+    :param debug: Optional, debug level 0-5
+    :type starttime: obspy.core.utcdatetime.UTCDateTime
+    :param starttime: Starttime for plotting, only used if debug > 2.
+    :type samp_rate: float
+    :param samp_rate: Sampling rate in Hz, only used for plotting if debug > 2.
+
+    :return: peaks: Lists of tuples of peak values and locations.
+    :rtype: list
+
+
+    >>> import numpy as np
+    >>> arr = np.random.randn(100)
+    >>> threshold = 10
+    >>> arr[40] = 20
+    >>> arr[60] = 100
+    >>> find_peaks(arr, threshold, 3)
     [(20.0, 40), (100.0, 60)]
     """
     if not starttime:
@@ -249,7 +328,7 @@ def coin_trig(peaks, stachans, samp_rate, moveout, min_trig, trig_int):
         trig_val = master[1]
         for slave in slaves:
             if abs(slave[0] - master[0]) <= (moveout * samp_rate) and \
-               slave[2] != master[2]:
+                            slave[2] != master[2]:
                 coincidence += 1
                 if slave[0] < master[0]:
                     trig_time = slave[0]
@@ -267,7 +346,7 @@ def coin_trig(peaks, stachans, samp_rate, moveout, min_trig, trig_int):
                 # If the event occurs within the trig_int time then do not add
                 # it, and break out of the inner loop.
                 if abs(coincidence_trigger[1] - peak[1]) < (trig_int *
-                                                            samp_rate):
+                                                                samp_rate):
                     add = False
                     break
             if add:
@@ -281,4 +360,5 @@ def coin_trig(peaks, stachans, samp_rate, moveout, min_trig, trig_int):
 
 if __name__ == "__main__":
     import doctest
+
     doctest.testmod()
