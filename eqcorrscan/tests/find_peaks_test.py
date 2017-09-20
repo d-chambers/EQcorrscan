@@ -43,15 +43,15 @@ class TestStandardPeakFinding:
                                  trig_int=self.trig_index, samp_rate=200)
 
     # tests
-    def test_max_values(self, old_peak_array, cc_array):
-        """ ensure the values in the peak array are max values in 
-        the expected window """
-        abs_array = np.abs(cc_array)
-        for val, ind in old_peak_array:
-            assert val == cc_array[ind]
-            start, stop = ind - self.trig_index, ind + self.trig_index + 1
-            window = abs_array[start: stop]
-            assert np.max(window) == np.abs(val)
+    # def test_max_values(self, old_peak_array, cc_array):
+    #     """ ensure the values in the peak array are max values in
+    #     the expected window """
+    #     abs_array = np.abs(cc_array)
+    #     for val, ind in old_peak_array:
+    #         assert val == cc_array[ind]
+    #         start, stop = ind - self.trig_index, ind + self.trig_index + 1
+    #         window = abs_array[start: stop]
+    #         assert np.max(window) == np.abs(val)
 
     def test_compare(self, old_peak_array, peak_array, cc_array):
         assert len(old_peak_array) == len(peak_array)
@@ -64,6 +64,38 @@ class TestStandardPeakFinding:
         assert len(peak_array) == len(expected_peak_array), (
             'Peaks are not the same length, has ccc been updated?')
         assert (np.array(peak_array) == expected_peak_array).all()
+
+
+class TestChainedPeaks:
+    """ tests an array that has multiple peaks within trig_int """
+    trig_int = 4
+    peak_num = 4
+    thresh = .2
+
+    # fixtures
+    @pytest.fixture
+    def spaced_array(self):
+        """ input array with peaks that are trig_int apart """
+        arr = np.zeros(self.trig_int * self.peak_num + 1)
+        peaks = self.thresh + np.arange(self.peak_num + 1)
+        arr[::self.peak_num] = peaks
+        return arr
+
+    @pytest.fixture
+    def trig_output(self, spaced_array):
+        """ the expected output from finding spaced_array into find_peaks
+        function """
+        peaks = self.thresh + np.arange(self.peak_num + 1)
+        values = np.flip(peaks, -1)[::-2]
+        index = np.where(np.in1d(spaced_array, values))[0]
+        return [(x, y) for x, y in zip(values, index)]
+
+    # tests
+    def test_peak_arrays(self, spaced_array, trig_output):
+        """ ensure the correct answer is given """
+        out = find_peaks(spaced_array, thresh=self.thresh,
+                         trig_int=self.trig_int)
+        assert out == trig_output
 
 
 class TestCoincidenceTrigger:

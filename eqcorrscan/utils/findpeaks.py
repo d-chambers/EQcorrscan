@@ -120,15 +120,20 @@ def decluster2(peaks, index, trig_int):
     :return: list of tuples of (value, sample)
     """
     # sort peaks highest to lowest
-    peak_ind_list = []  # a list of indicies that should be kept
-    # get a sorted list of indicies of the reduced arrays
+    peak_ind_list = []  # a list of indices that should be kept
+    rejected_inds = []
+    # get a sorted list of indices of the reduced arrays
     new_inds = np.argsort(-np.abs(peaks))
     # get a sorted list of the original indicies
     sorted_peak_inds = index[new_inds]
     # iterate, if no peak with a high value occurs within trig int save
     for pnum, ind in enumerate(sorted_peak_inds):
-        if not np.any(abs(ind - sorted_peak_inds[: pnum]) < trig_int):
+        inds_bigger = np.delete(sorted_peak_inds[: pnum], rejected_inds)
+        if not np.any(np.abs(ind - inds_bigger) < trig_int + 1):
             peak_ind_list.append(new_inds[pnum])
+        else:
+            rejected_inds.append(pnum)
+
     # form a list of tuples with [(peak_value, peak_index), ...]
     return [(peaks[x], index[x]) for x in np.sort(peak_ind_list)]
 
