@@ -121,18 +121,18 @@ def decluster2(peaks, index, trig_int):
     """
     # sort peaks highest to lowest
     peak_ind_list = []  # a list of indices that should be kept
-    rejected_inds = []
+    valid_ind = np.ones(len(peaks), dtype=bool)
     # get a sorted list of indices of the reduced arrays
     new_inds = np.argsort(-np.abs(peaks))
     # get a sorted list of the original indicies
     sorted_peak_inds = index[new_inds]
     # iterate, if no peak with a high value occurs within trig int save
     for pnum, ind in enumerate(sorted_peak_inds):
-        inds_bigger = np.delete(sorted_peak_inds[: pnum], rejected_inds)
-        if not np.any(np.abs(ind - inds_bigger) < trig_int + 1):
+        inds_bigger = np.abs(sorted_peak_inds[: pnum] - ind) < (trig_int + 1)
+        if not np.any(inds_bigger & valid_ind[: pnum]):
             peak_ind_list.append(new_inds[pnum])
         else:
-            rejected_inds.append(pnum)
+            valid_ind[pnum] = False
 
     # form a list of tuples with [(peak_value, peak_index), ...]
     return [(peaks[x], index[x]) for x in np.sort(peak_ind_list)]
